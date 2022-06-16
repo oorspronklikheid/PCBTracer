@@ -10,8 +10,12 @@
 <canvas id='myCanvas' width=window.height() height="100%">
 </canvas>
 <p id="status">hi where am ii?</p>
+ imgurl : <input type="text" id="imgurl"><button onclick="updateURL()" >Update</button><br>
+ <input type="range" min="0.2" max="5" value="1" step='0.1' class="slider" id="zoom" oninput="drawBoard()" >
 </body>
 <script type="text/javascript">
+
+
 
   	window.onload = function() {
 
@@ -35,11 +39,25 @@ var botBounds = { xmin:254 , ymin:30 , xmax:487 , ymax:323  }
 var offsetx = 0 ; 
 var offsety = 0 ; 
 
+function updateURL()
+{
+	//https://circuitdigest.com/microcontroller-projects/arduino-motor-driver-shield-pcb
+  
+  var img = document.getElementById("scream");
+  var imgurl = document.getElementById("imgurl").value;
 
+  if(imgurl != "")
+  	img.src = imgurl
+
+  console.log('hello')
+  console.log(img)
+  drawBoard();
+
+}
 function check(e) {
 
 	var p = document.getElementById("status")
-    console.log(e.keyCode);
+    // console.log(e.keyCode);
     if(e.keyCode ==68)
     	toolmode = 'DrawLine'
     if(e.keyCode ==67)
@@ -60,6 +78,7 @@ function drawBoard()
 {
 
   var c = document.getElementById("myCanvas");
+  var zoom = document.getElementById("zoom").value;
   var ctx = c.getContext("2d");
 
   c.height =window.innerHeight -100 ; 
@@ -71,7 +90,7 @@ function drawBoard()
 
   var img = document.getElementById("scream");
   // console.log(img)
-  ctx.drawImage(img, 0, 0 , img.naturalWidth * 1.8 , img.naturalHeight * 1.8 );
+  ctx.drawImage(img, 0, 0 , img.naturalWidth * zoom , img.naturalHeight * zoom );
 
   drawLines()
 
@@ -197,16 +216,16 @@ function drawLines()
   	var c = document.getElementById("myCanvas");
   	var ctx = c.getContext("2d");
 
-  	console.log("allLines")
-  	console.log(allLines)
+  	// console.log("allLines")
+  	// console.log(allLines)
 
   	for (var i = 0; i < allLines.length; i++) 
 	{
 		var tempLine = allLines[i]
-		console.log("drawing line set  ? : " + i)
+		// console.log("drawing line set  ? : " + i)
 		for (var j = 0; j < tempLine.length; j++) 
 		{
-			console.log("drawing line ? : " + j)
+			// console.log("drawing line ? : " + j)
 			ctx.beginPath();
 			ctx.lineWidth = 3;
 			ctx.moveTo(tempLine[j].startx, tempLine[j].starty);
