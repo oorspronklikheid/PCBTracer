@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>PCB THING</title>
+</head>
+<body>
+<img id="scream"  src="1.jpg" style="display: none;" >
+<canvas id='myCanvas' width=window.height() height="100%">
+</canvas>
+<p id="status">hi where am ii?</p>
+</body>
+<script type="text/javascript">
+
+  	window.onload = function() {
+
+  	drawBoard()
+	window.addEventListener('keydown',this.check,false);
+
+	var c = document.getElementById("myCanvas");
+	var ctx = c.getContext("2d");
+
+	c.addEventListener('mousemove', drawCircleMouseMove, false);
+	c.addEventListener('click', canvasClicked, false);
+
+	var p = document.getElementById("status")
+	p.innerHTML = "";
+
+}; 
+
+var topBounds = { xmin:18 , ymin:33 , xmax:242 , ymax:331  }
+var botBounds = { xmin:254 , ymin:30 , xmax:487 , ymax:323  }
+
+var offsetx = 0 ; 
+var offsety = 0 ; 
+
+
+function check(e) {
+
+	var p = document.getElementById("status")
+    console.log(e.keyCode);
+    if(e.keyCode ==68)
+    	toolmode = 'DrawLine'
+    if(e.keyCode ==67)
+    	toolmode = 'Calibrate'
+    if(e.keyCode ==32)
+    {
+    	toolmode = ''
+    	var temp = line
+    	allLines.push(temp);
+    	line = [] ;
+    	drawstate = 0
+    	// drawBoard();
+    }
+
+    p.innerHTML = "Mode is : " + toolmode
+}
+function drawBoard()
+{
+
+  var c = document.getElementById("myCanvas");
+  var ctx = c.getContext("2d");
+
+  c.height =window.innerHeight -100 ; 
+  c.width =window.innerWidth -10; 
+
+
+  ctx.fillStyle = "#0000ff3f";
+  ctx.fillRect(0, 0, c.width, c.height);
+
+  var img = document.getElementById("scream");
+  // console.log(img)
+  ctx.drawImage(img, 0, 0 , img.naturalWidth * 1.8 , img.naturalHeight * 1.8 );
+
+  drawLines()
+
+}
+
+var toolmode = ''; 
+var phase = 0 ; 
+var drawstate = 0 ; 
+var beginline = { x:0 , y:0 };
+var endline = { x:0 , y:0 };
+var line = []; 
+var allLines = []; 
+function canvasClicked(e)
+{
+	// console.log(e);
+	// console.log(phase) ;
+	var p = document.getElementById("status")
+
+	var markerColor = "";
+  	var c = document.getElementById("myCanvas");
+  	var ctx = c.getContext("2d");
+  	var radius = 5 
+
+  	if(toolmode == 'Calibrate')
+  	{
+
+		if(phase == 0 )
+		{
+			topBounds.xmin = e.layerX - c.getBoundingClientRect().x; 
+			topBounds.ymin = e.layerY - c.getBoundingClientRect().y; 
+			ctx.fillStyle = "#f0ff";
+			p.innerHTML = "Place point 2";
+		}
+		if(phase == 1 )
+		{
+			topBounds.xmax = e.layerX - c.getBoundingClientRect().x; 
+			topBounds.ymax = e.layerY - c.getBoundingClientRect().y; 
+			ctx.fillStyle = "#0fff";
+			p.innerHTML = "Place point 3";
+		}
+
+		if(phase == 2 )
+		{
+			botBounds.xmin = e.layerX - c.getBoundingClientRect().x; 
+			botBounds.ymin = e.layerY - c.getBoundingClientRect().y; 
+			ctx.fillStyle = "#aa4f";
+			p.innerHTML = "Place point 4";
+		}
+		if(phase == 3 )
+		{
+			botBounds.xmax = e.layerX - c.getBoundingClientRect().x; 
+			botBounds.ymax = e.layerY - c.getBoundingClientRect().y; 
+			ctx.fillStyle = "#00ff";
+			p.innerHTML = "All points placed";
+
+		}
+
+		if(phase < 4 )
+		{
+
+			ctx.beginPath();
+			ctx.arc(e.layerX - radius, e.layerY - radius, radius, 0, 2 * Math.PI );
+			ctx.fillStyle = markerColor;
+			ctx.fill();
+		}
+		phase++ ;
+  	}
+
+
+	// if(phase > 3 )
+	if(toolmode == 'DrawLine')
+	{
+		if( drawstate == 1)
+		{
+
+			endline.x = e.layerX - c.getBoundingClientRect().x;
+			endline.y = e.layerY - c.getBoundingClientRect().y ;
+			drawstate = 0 ; 
+			// console.log('end coord')
+			ctx.beginPath();
+			ctx.lineWidth = 3;
+
+			ctx.moveTo(beginline.x, beginline.y);
+			ctx.lineTo(endline.x, endline.y);
+			ctx.stroke();
+			line.push({startx:beginline.x , starty:beginline.y , endx:endline.x  , endy:endline.y} )
+		} 
+		if( drawstate == 0)
+		{
+			beginline.x = e.layerX - c.getBoundingClientRect().x;
+			beginline.y = e.layerY - c.getBoundingClientRect().y;
+			drawstate = 1 ; 
+			// console.log('start coord')
+		}
+
+	} 
+
+
+
+
+}
+
+function getMirrorCoords(coord) {
+	
+	var topdx = topBounds.xmax - topBounds.xmin	; //how long x is !
+	var rx = topdx/(coord.x -topBounds.xmin )
+
+	var botdx = botBounds.xmax - botBounds.xmin	; //how long x is !
+	var botx = botBounds.xmax - botdx/rx
+
+
+	var topdy = topBounds.ymax - topBounds.ymin	; //how long x is !
+	var ry = topdy/(coord.y -topBounds.ymin )
+
+	var botdy = botBounds.ymax - botBounds.ymin	; //how long x is !
+	var boty  = botBounds.ymin + botdy/ry
+
+	return {x:botx, y:boty}	
+}
+
+function drawLines()
+{
+  	var c = document.getElementById("myCanvas");
+  	var ctx = c.getContext("2d");
+
+  	console.log("allLines")
+  	console.log(allLines)
+
+  	for (var i = 0; i < allLines.length; i++) 
+	{
+		var tempLine = allLines[i]
+		console.log("drawing line set  ? : " + i)
+		for (var j = 0; j < tempLine.length; j++) 
+		{
+			console.log("drawing line ? : " + j)
+			ctx.beginPath();
+			ctx.lineWidth = 3;
+			ctx.moveTo(tempLine[j].startx, tempLine[j].starty);
+			ctx.lineTo(tempLine[j].endx, tempLine[j].endy);
+			ctx.stroke();
+
+			var mirrorStartCoords = getMirrorCoords({x:tempLine[j].startx, y:tempLine[j].starty }) 
+			var mirrorEndCoords   = getMirrorCoords({x:tempLine[j].endx, y:tempLine[j].endy }) 
+			ctx.beginPath();
+			ctx.lineWidth = 5;
+			ctx.moveTo(mirrorStartCoords.x, mirrorStartCoords.y);
+			ctx.lineTo(mirrorEndCoords.x, mirrorEndCoords.y);
+			ctx.stroke();
+		}
+
+	}
+
+
+
+	for (var i = 0; i < line.length; i++) 
+	{
+		// lines[i]
+		ctx.beginPath();
+		ctx.lineWidth = 3;
+		ctx.moveTo(line[i].startx, line[i].starty);
+		ctx.lineTo(line[i].endx, line[i].endy);
+		ctx.stroke();
+
+		var mirrorStartCoords = getMirrorCoords({x:line[i].startx, y:line[i].starty }) 
+		var mirrorEndCoords   = getMirrorCoords({x:line[i].endx, y:line[i].endy }) 
+		ctx.beginPath();
+		ctx.lineWidth = 3;
+		ctx.moveTo(mirrorStartCoords.x, mirrorStartCoords.y);
+		ctx.lineTo(mirrorEndCoords.x, mirrorEndCoords.y);
+		ctx.stroke();
+
+	}
+}
+
+function drawCircleMouseMove(e) {
+	var markerColor = "#f00";
+  	var c = document.getElementById("myCanvas");
+  	var ctx = c.getContext("2d");
+
+	ctx.clearRect(0, 0, c.width, c.height);
+	drawBoard()
+	if(e.buttons == 0  && drawstate == 1 && toolmode == 'DrawLine')// no button clicked and ready to draw next line
+	{
+		// e = toCanvasCoords(e);
+		// console.log(c.getBoundingClientRect())
+
+		ctx.beginPath();
+		ctx.lineWidth = 3;
+
+
+		var x = e.layerX - c.getBoundingClientRect().x
+		var y = e.layerY - c.getBoundingClientRect().y
+
+		ctx.moveTo(beginline.x, beginline.y);
+		ctx.lineTo( x , y );
+		ctx.stroke();
+
+		var mirrorStartCoords = getMirrorCoords({x:beginline.x , y:beginline.y})
+		var mirrorEndCoords   = getMirrorCoords({x:x , y:y}) 
+
+		ctx.moveTo(mirrorStartCoords.x, mirrorStartCoords.y);
+		ctx.lineTo( mirrorEndCoords.x , mirrorEndCoords.y );
+		ctx.stroke();
+
+	}
+
+	if(e.buttons ==1 )
+	{
+		var radius = 3 ; 
+		// console.log(e);
+
+		if( e.layerX < topBounds.xmax && e.layerX > topBounds.xmin &&
+			e.layerY < topBounds.ymax && e.layerY > topBounds.ymin  )
+		{
+
+			var layerX = e.layerX - c.getBoundingClientRect().x 
+			var layerY = e.layerY - c.getBoundingClientRect().y
+			ctx.beginPath();
+			ctx.arc(layerX - radius/2, layerY - radius/2, radius, 0, 2 * Math.PI );
+			ctx.fillStyle = markerColor;
+			ctx.fill();
+
+
+
+			mirrorCoords = getMirrorCoords({x:layerX, y:layerY});
+
+			// offsetx = botBounds.xmax - e.layerX - topBounds.xmin ;
+			// offsetx =  topBounds.xmax -  topBounds.xmin ; 
+			// console.log(rx)
+			// console.log(botx)
+			ctx.beginPath();
+			ctx.arc(mirrorCoords.x - radius/2, mirrorCoords.y - radius/2, radius, 0, 2 * Math.PI );
+			ctx.fillStyle = markerColor;
+			ctx.fill();
+			
+		}else
+		{
+			// console.log('NOT IN first area');
+			// console.log(topBounds) ; 
+		}
+
+	}
+
+}
+
+
+</script>
+</html>
